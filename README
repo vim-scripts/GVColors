@@ -1,0 +1,39 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=877
+
+<gvcolors.vim> displays a list of colors available under X-windows in their own
+color.  It is based on vimtip#634 contributed by mohsin at
+http://www.cs.albany.edu/~mosh.
+
+The script intercepts several motions and sets up syntax highlighting to
+display the named colors.
+
+Example:
+
+  gvim gvcolors.vim
+  :GVColors
+
+Motions:
+	   j      move display down one line
+	   k      move display up   one line
+	 ctrl-d   move display down &scroll lines (see :he 'scroll')
+	 ctrl-u   move display up   &scroll lines (see :he 'scroll')
+	 ctrl-f   move display down one page
+	 ctrl-b   move display up   one page
+	 pageup   same as ctrl-b
+	 pagedown same as ctrl-f
+
+Special care to show just a single page of colors is taken because
+Vim is limited to displaying approximately 224 colors with syntax
+highlighting.
+
+History/Features:
+
+v3: Supports use of the mouse and slider bars.
+
+v2: Looks up colors in /usr/X11R6/lib/X11/rgb.txt,
+which may be overridden by let g:rgbtxtfile="path";
+now shows red:green:blue assignments as well as
+the colored text! 
+
+(alpha/beta version available at http://mysite.verizon.net/astronaut/vim/index.html#GVCOLORS)
+
