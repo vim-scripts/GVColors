@@ -2,15 +2,15 @@
 "
 "   Authors: Charles Campbell <NdrOchipS@PcampbellAfamily.Mbiz> - NOSPAM
 "   		 mosh at http://www.cs.albany.edu/~mosh  	
-"   Date:	 Apr 02, 2004
-"   Version:	4
+"   Date:	 Jul 13, 2004
+"   Version:	5
 "
 " It will display all the colors available under X by setting up colors for
-" just those named colors showing on the display (up to 192 of them).
+" just those named colors showing on the display (up to 188 of them).
 " Pressing <shift-leftmouse> will toggle between dark and light colored
 " background.
 "
-" If you attempt to show more than 192 colors, the additional colors will be
+" If you attempt to show more than 188 colors, the additional colors will be
 " set to Ignore highlighting.
 
 " ---------------------------------------------------------------------
@@ -86,12 +86,10 @@ fun! DisplayColors(linechg)
 
   hi  clear
   syn clear
-  syn off
-  syn on
   if &bg == "dark"
-   hi Normal guibg=black
+   hi Normal gui=NONE guifg=green guibg=black
   else
-   hi Normal guibg=white
+   hi Normal gui=NONE guifg=green guibg=white
   endif
   syn match CommentStart '^" '
   hi link CommentStart Ignore
@@ -125,7 +123,7 @@ fun! DisplayColors(linechg)
 
   let wrdcnt= 0
   while search('\w\+','W') > 0
-   if wrdcnt < 192
+   if wrdcnt < 188
     exec 'hi col_'.expand("<cword>").' gui=NONE guifg='.expand("<cword>")
     exec 'syn keyword col_'.expand("<cword>")." ".expand("<cword>")
    else
@@ -202,14 +200,12 @@ fun! s:ToggleBackground()
   endif
   hi  clear
   syn clear
-  syn off
-  syn on
 endfun
 " ---------------------------------------------------------------------
 
 " Events:
 au CursorHold,FocusGained * set lz|call CurHoldFix()|set nolz
-let &updatetime= 1000
+let &updatetime= 100
 
 " --Start Colors--
 " AliceBlue        HotPink4              peru          gray39
