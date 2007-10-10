@@ -1,34 +1,80 @@
 " gvcolors.vim: fire up gvim on this file, then :so %
+"   vim: fdm=marker
 "
-"   Authors: Charles Campbell <NdrOchipS@PcampbellAfamily.Mbiz> - NOSPAM
-"   		 mosh at http://www.cs.albany.edu/~mosh  	
-"   Date:	 Jul 13, 2004
-"   Version:	5
+" Authors: Charles Campbell <NdrOchipS@PcampbellAfamily.Mbiz> - NOSPAM
+"          mosh at http://www.cs.albany.edu/~mosh
+" Date:    Oct 10, 2007
+" Version: 6
+"
+" Usage: {{{1
+"       gvim gvcolors.vim
+"       :so %
 "
 " It will display all the colors available under X by setting up colors for
-" just those named colors showing on the display (up to 188 of them).
-" Pressing <shift-leftmouse> will toggle between dark and light colored
-" background.
+" just those named colors showing on the display.
+" For vim versions prior to 7.0, up to 188 of them will be displayed at a
+" time.
 "
-" If you attempt to show more than 188 colors, the additional colors will be
-" set to Ignore highlighting.
+" <shift-leftmouse> will bring the selected color to the top screen line
+" <shift-rightmouse> will toggle between dark and light colored background.
+"
+" For vim versions earlier than 7.0, if you attempt to show more than 188
+" colors at one time, the additional colors will be set to Ignore
+" highlighting.  The reason is that vim has a limit on the number of
+" highlighting colors it can handle at one time.
+"
+" History: {{{1
+" v6 07/15/04 : * allows rightmouse to click between dark & bright backgrounds
+"                 (earlier versions only allowed shift-leftmouse)
+"               * double-click with leftmouse will pull the color line up
+"                 to the top of the screen, thereby displaying its rgb values
+"               * <gvcolors.vim> is now folded
+"
+" GetLatestVimScripts: 877 1 :AutoInstall: gvcolors.vim
 
 " ---------------------------------------------------------------------
+"  Load Once: {{{1
+if &cp || exists("g:loaded_gvcolors")
+ finish
+endif
+let s:keepcpo= &cpo
+set cpo&vim
+echomsg "  leftmouse=selects  rightmouse=dark/light background"
+
+" ---------------------------------------------------------------------
+"  Local Options: {{{1
+setlocal so=0 siso=0 go+=rl nohls laststatus=2 nonu nosol ttyfast
+setlocal cpo&vim
+syn on
+
+" ---------------------------------------------------------------------
+"  Sanity Checks: {{{1
 if !has("gui_running")
  echoerr "needs to run under gvim"
  finish
 endif
-"call Decho("setting up debugging window")
+let g:loaded_gvcolors= "v6"
+"DechoTabOn
 
-if !exists("g:rgbtxtfile")
- let g:rgbtxtfile= "/usr/X11R6/lib/X11/rgb.txt"
- if !filereadable(g:rgbtxtfile) && has("win32")
-  let g:rgbtxtfile= "c:/cygwin/usr/X11R6/lib/X11/rgb.txt"
+if !exists("s:rgbtxtfile")
+ if filereadable("/usr/X11R6/lib/X11/rgb.txt")
+  let s:rgbtxtfile= "/usr/X11R6/lib/X11/rgb.txt"
+"  call Decho("found rgbtxtfile<".s:rgbtxtfile.">")
+ elseif has("win32") && filereadable("c:/cygwin/usr/X11R6/lib/X11/rgb.txt")
+  let s:rgbtxtfile= "c:/cygwin/usr/X11R6/lib/X11/rgb.txt"
+"  call Decho("found rgbtxtfile<".s:rgbtxtfile.">")
+ elseif filereadable("/usr/share/X11/rgb.txt")
+  let s:rgbtxtfile= "/usr/share/X11/rgb.txt"
+"  call Decho("found rgbtxtfile<".s:rgbtxtfile.">")
+ else
+"  call Decho("unable to find rgbtxtfile")
  endif
 endif
 
-if filereadable(g:rgbtxtfile)
- let g:do_rgb_stl= 1
+" ---------------------------------------------------------------------
+"  Initialization: {{{1
+if exists("s:rgbtxtfile") && filereadable(s:rgbtxtfile)
+ let s:do_rgb_stl= 1
  let g:color1  = ""
  let g:color1r = ""
  let g:color1g = ""
@@ -42,37 +88,49 @@ if filereadable(g:rgbtxtfile)
  let g:color3g = ""
  let g:color3b = ""
 
- " LookUpColor:
+ " determine the qty of lines of text being displayed
+ norm! 1GL
+ let g:linesperpage = line(".")
+" call Decho("init: linesperpage=".g:linesperpage)
+
+ " ---------------------------------------------------------------------
+ " LookUpColor: {{{2
  fun! s:LookUpColor(color,nmbr)
-   set lz
-   exe "silent! vsp ".g:rgbtxtfile
-   1
-   norm! 0
-   setlocal hidden
-   let g:color{a:nmbr}  = a:color
-   let g:color{a:nmbr}r = "U"
-   let g:color{a:nmbr}g = "U"
-   let g:color{a:nmbr}b = "U"
-   let srch             = search('\<'.a:color.'\>',"wW")
-   if srch
-    let colorline        = getline(".")
-    let colorpat1        = '^\s*\(\d\+\).*$'
-    let colorpat2        = '^\s*\(\d\+\)\s*\(\d\+\).*$'
-    let colorpat3        = '^\s*\(\d\+\)\s*\(\d\+\)\s*\(\d\+\).*$'
-    let g:color{a:nmbr}r = substitute(colorline,colorpat1,'\1','e')
-    let g:color{a:nmbr}g = substitute(colorline,colorpat2,'\2','e')
-    let g:color{a:nmbr}b = substitute(colorline,colorpat3,'\3','e')
-"    call Decho("LookUpColor<".g:rgbtxtfile."> color<".a:color."> nmbr=".a:nmbr.": rgb=".g:color{a:nmbr}r.",".g:color{a:nmbr}g.",".g:color{a:nmbr}b)
-   else
-"    call Decho("LookUpColor<".g:rgbtxtfile."> color<".a:color."> nmbr=".a:nmbr.": search failed with ".srch)
+"   call Dfunc("LookUpColor(color=".a:color.",nmbr=".a:nmbr.")")
+   if exists("s:rgbtxtfile")
+    set lz
+    exe "silent! vsp ".s:rgbtxtfile
+    1
+    norm! 0
+    setlocal hidden
+    let g:color{a:nmbr}  = a:color
+    let g:color{a:nmbr}r = "U"
+    let g:color{a:nmbr}g = "U"
+    let g:color{a:nmbr}b = "U"
+    let srch             = search('\<'.a:color.'\>',"wW")
+    if srch
+     let colorline        = getline(".")
+     let colorpat1        = '^\s*\(\d\+\).*$'
+     let colorpat2        = '^\s*\(\d\+\)\s*\(\d\+\).*$'
+     let colorpat3        = '^\s*\(\d\+\)\s*\(\d\+\)\s*\(\d\+\).*$'
+     let g:color{a:nmbr}r = substitute(colorline,colorpat1,'\1','e')
+     let g:color{a:nmbr}g = substitute(colorline,colorpat2,'\2','e')
+     let g:color{a:nmbr}b = substitute(colorline,colorpat3,'\3','e')
+"     call Decho("LookUpColor<".s:rgbtxtfile."> color<".a:color."> nmbr=".a:nmbr.": rgb=".g:color{a:nmbr}r.",".g:color{a:nmbr}g.",".g:color{a:nmbr}b)
+    else
+"     call Decho("LookUpColor<".s:rgbtxtfile."> color<".a:color."> nmbr=".a:nmbr.": search failed with ".srch)
+    endif
+    q
+    set nolz
    endif
-   q
-   set nolz
+"   call Dret("LookUpColor")
  endfun
 endif
 
-" DisplayColors: display a page of colors
+" ---------------------------------------------------------------------
+" DisplayColors: display a page of colors {{{1
 fun! DisplayColors(linechg)
+"  call Dfunc("DisplayColors(linechg=".a:linechg.") g:topline=".g:topline.(exists("do_rgb_stl")? " do_rgb_stl=".s:do_rgb_stl : " <null do_rgb_stl>"))
   let oldtopline= g:topline
   let g:topline = g:topline + a:linechg
 
@@ -88,14 +146,16 @@ fun! DisplayColors(linechg)
   syn clear
   if &bg == "dark"
    hi Normal gui=NONE guifg=green guibg=black
+   hi StatusLine guifg=black guibg=cyan gui=NONE
   else
    hi Normal gui=NONE guifg=green guibg=white
+   hi StatusLine guifg=blue guibg=yellow gui=NONE
   endif
   syn match CommentStart '^" '
   hi link CommentStart Ignore
   exe "norm! ".g:topline."G0"
 
-  if exists("g:do_rgb_stl")
+  if exists("s:do_rgb_stl")
    let pat1       = '^"\s*\(\w\+\).*$'
    let pat2       = '^"\s*\(\w\+\)\s\+\(\w\+\).*$'
    let pat3       = '^"\s*\(\w\+\)\s\+\(\w\+\)\s\+\(\w\+\).*$'
@@ -105,7 +165,7 @@ fun! DisplayColors(linechg)
    let colorname2 = substitute(curline,pat2,'\2','e')
    let colorname3 = substitute(curline,pat3,'\3','e')
    let colorname4 = substitute(curline,pat4,'\4','e')
-"   call Decho("do_rgb_stl=".g:do_rgb_stl.": c1<".colorname1."> c2<".colorname2."> c3<".colorname3."> c4<".colorname4.">")
+"   call Decho("do_rgb_stl=".s:do_rgb_stl.": c1<".colorname1."> c2<".colorname2."> c3<".colorname3."> c4<".colorname4.">")
    call s:LookUpColor(colorname1,"1")
    call s:LookUpColor(colorname2,"2")
    call s:LookUpColor(colorname3,"3")
@@ -117,13 +177,13 @@ fun! DisplayColors(linechg)
    elseif g:color2r != 'U'
     set stl=\ \ %-16(%{g:color1r}:%{g:color1g}:%{g:color1b}%)\ %-21(%{g:color2r}:%{g:color2g}:%{g:color2b}%)
    else
-    set stl=\ \ %-16(%{g:color1r}:%{g:color1g}:%{g:color1b}%)
+    setl stl=\ \ %-16(%{g:color1r}:%{g:color1g}:%{g:color1b}%)
    endif
   endif
 
   let wrdcnt= 0
   while search('\w\+','W') > 0
-   if wrdcnt < 188
+   if (v:version < 700 && wrdcnt < 188) || v:version >= 700
     exec 'hi col_'.expand("<cword>").' gui=NONE guifg='.expand("<cword>")
     exec 'syn keyword col_'.expand("<cword>")." ".expand("<cword>")
    else
@@ -138,29 +198,52 @@ fun! DisplayColors(linechg)
 
 "  call Decho("displayed ".wrdcnt." colors")
   exe "norm! ".g:topline."G0z\<cr>"
+
+"  call Dret("DisplayColors")
 endfun
 
 " ---------------------------------------------------------------------
-" CurHoldFix:
+" CurHoldFix: {{{1
 fun! CurHoldFix()
+"  call Dfunc("CurHoldFix() curline=".line(".")." winline=".winline()." topline=".g:topline)
   let curline        = line(".")
-  let s:chg          = line(".") - (winline() - 1) - g:topline
+
+  if line(".") == g:topline
+   " this can happen when the scrollbar is used
+   let s:chg= 1 - winline()
+"   call Decho("chg=1 - [winline=".winline()."]=".s:chg)
+  else
+   " this can happen on other motions
+   let s:chg= curline - g:topline
+"   call Decho("chg=[curline=".curline."]-[topline=".g:topline."]=".s:chg)
+  endif
+
+  " determine the qty of lines of text being displayed
+  " Done here just in case the window's been resized.
+  silent! norm! zR
   norm! 1GL
   let g:linesperpage = line(".")
+
+  " return display with curline at top-of-page
   exe curline
   exe "norm! z\<cr>"
   if line(".") > g:firstline
-   call DisplayColors(s:chg)
+   if s:chg != 0
+    call DisplayColors(s:chg)
+   endif
   else
    let g:topline=g:firstline
    call DisplayColors(0)
   endif
+"  if !exists("s:curholdfixcnt")|let s:curholdfixcnt=1|else|let s:curholdfixcnt= s:curholdfixcnt + 1|endif  "Decho
+"  call Dret("CurHoldFix : s:curholdfixcnt=".s:curholdfixcnt)
 endfun
 
 " ---------------------------------------------------------------------
-
-" Preparation
+" Preparation: {{{1
+"call Decho("begin preparation")
 set ft=
+silent! norm! zR
 norm! 1GL
 let g:linesperpage = line(".")
 let wrdcnt       = 0
@@ -168,45 +251,54 @@ norm! 1G
 call search('^" --Start Colors--$')
 let g:firstline = line(".") + 1
 let g:topline   = g:firstline
-"set nomodifiable
+set nomodifiable
 call DisplayColors(0)
 
-" Maps:
-nmap <buffer> <silent> <down>     j
-nmap <buffer> <silent> <up>       k
-nmap <buffer> <silent> <pageup>   <c-b>
-nmap <buffer> <silent> <pagedown> <c-f>
-nn   <buffer> <silent> j          :call DisplayColors(1)<cr>
-nn   <buffer> <silent> k          :call DisplayColors(-1)<cr>
-nn   <buffer> <silent> <c-d>      :call DisplayColors(&scroll)<cr>
-nn   <buffer> <silent> <c-u>      :call DisplayColors(-&scroll)<cr>
-nn   <buffer> <silent> <c-f>      :call DisplayColors(g:linesperpage)<cr>
-nn   <buffer> <silent> <c-b>      :call DisplayColors(-g:linesperpage)<cr>
-nn   <buffer> <silent> G          :let g:topline= line("$")-g:linesperpage+1<cr>:call DisplayColors(0)<cr>
-nn   <buffer> <silent> gg         :let g:topline= g:firstline<cr>:call DisplayColors(0)<cr>
-nn   <buffer> <silent> <c-l>      H0:let g:topline= line(".")<cr>:call DisplayColors(0)<cr>
+" ---------------------------------------------------------------------
+" Maps: {{{1
+"call Decho("implement maps")
+nmap <buffer> <silent> <down>        j
+nmap <buffer> <silent> <up>          k
+nmap <buffer> <silent> <pageup>      <c-b>
+nmap <buffer> <silent> <pagedown>    <c-f>
+nmap <buffer> <silent> <2-leftmouse> <leftmouse>z<cr>
+nn   <buffer> <silent> j             :call DisplayColors(1)<cr>
+nn   <buffer> <silent> k             :call DisplayColors(-1)<cr>
+nn   <buffer> <silent> <c-d>         :call DisplayColors(&scroll)<cr>
+nn   <buffer> <silent> <c-u>         :call DisplayColors(-&scroll)<cr>
+nn   <buffer> <silent> <c-f>         :call DisplayColors(g:linesperpage)<cr>
+nn   <buffer> <silent> <c-b>         :call DisplayColors(-g:linesperpage)<cr>
+nn   <buffer> <silent> G             :call DisplayColors(line("$") - g:linesperpage + 1 - g:topline)<cr>
+nn   <buffer> <silent> gg            :let g:topline= g:firstline<cr>:call DisplayColors(0)<cr>
+nn   <buffer> <silent> <c-l>         H0:let g:topline= line(".")<cr>:call DisplayColors(0)<cr>
 nn   <buffer> <silent> <s-leftmouse> :call <SID>ToggleBackground()<cr>
+nn   <buffer> <silent> <rightmouse>  :call <SID>ToggleBackground()<cr>
 
 " ---------------------------------------------------------------------
-" ToggleBackground: changes background on a shift-leftmouse between
+" ToggleBackground: changes background on a shift-leftmouse between {{{1
 " dark and light (black and white)
 fun! s:ToggleBackground()
+"  call Dfunc("ToggleBackground()")
   if &bg == "dark"
-    hi Normal guibg=white
     let &bg="light"
   else
-    hi Normal guibg=black
     let &bg="dark"
   endif
-  hi  clear
-  syn clear
+  call DisplayColors(0)
+"  call Dret("ToggleBackground")
 endfun
 " ---------------------------------------------------------------------
+" Events: {{{1
+au CursorHold,FocusGained,FocusLost gvcolors.vim set lz|call CurHoldFix()|set nolz
+let &updatetime= 200
+" }}}
 
-" Events:
-au CursorHold,FocusGained * set lz|call CurHoldFix()|set nolz
-let &updatetime= 100
+" ---------------------------------------------------------------------
+" Restore: {{{1
+let &cpo=s:keepcpo
+unlet s:keepcpo
 
+" ---------------------------------------------------------------------
 " --Start Colors--
 " AliceBlue        HotPink4              peru          gray39
 " AntiqueWhite     IndianRed             pink          gray40
